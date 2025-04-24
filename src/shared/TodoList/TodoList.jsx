@@ -1,4 +1,4 @@
-import TodoListItem from "./TodoListItem";
+import TodoListItem from "../TodoList/TodoListItem";
 
 const TodoList = ({ todoList, onCompleteTodo }) => {
 
