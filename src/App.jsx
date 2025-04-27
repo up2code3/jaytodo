@@ -10,6 +10,25 @@ const RedLight = () => <div style={{ backgroundColor: 'red', width: 1000, height
 function App() {
   const [todoList, setTodoList] = useState([]);
 
+  //updateTodoHandler 
+  const updateTodoHandler = (editedTodo) => {
+    const updatedTodos = todoList.map((todo) => 
+      todo.id === editedTodo.id ?
+      {...editedTodo} : todo 
+    )
+    setTodoList(updatedTodos)
+  }
+
+
+  //complete todo helper
+  const completeTodo = (id) => {
+    const updatedTodos = todoList.map((todo) =>
+      todo.id === id ? { ...todo, isCompleted: true } : todo
+    );
+    setTodoList(updatedTodos);
+  };
+
+
   //eventhandler
   const addTodo = (title) => {
     const newTodo = {
@@ -20,12 +39,9 @@ function App() {
     setTodoList([...todoList, newTodo]);
   };
 
-  const completeTodo = (id) => {
-    const updatedTodos = todoList.map((todo) =>
-      todo.id === id ? { ...todo, isCompleted: true } : todo
-    );
-    setTodoList(updatedTodos);
-  };
+
+
+
   const [trafficLightColor, setTrafficLightColor] = useState('green');
   function cycleLight() {
     switch (trafficLightColor) {
@@ -54,7 +70,7 @@ function App() {
     <div>
       <h1>Todo List</h1>
       <TodoForm onAddTodo={addTodo} />
-      <TodoList todoList={todoList} onCompleteTodo={completeTodo} />
+      <TodoList todoList={todoList} onCompleteTodo={completeTodo} onUpdateTodo={updateTodoHandler} />
       {renderLight()}
       <button type="button" onClick={cycleLight}>
       Cycle Light
