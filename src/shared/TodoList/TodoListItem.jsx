@@ -1,11 +1,15 @@
 import TextInputWithLabel from "../TextInputWithLabel";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const TodoListItem = ({ todo, onCompleteTodo, onUpdateTodo }) => {
     
   const [isEditing, setIsEditing] = useState(false);
 
   const [workingTitle, setWorkingTitle] = useState(todo.title)
+
+useEffect(() => {
+  setWorkingTitle(todo.title);
+},[todo] )
 
 const handleUpdate = (event) => {
 if (!isEditing){
