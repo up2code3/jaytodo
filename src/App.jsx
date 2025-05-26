@@ -2,6 +2,26 @@ import "./App.css";
 import TodoList from "./shared/TodoList/TodoList";
 import TodoForm from "./features/TodoForm";
 import { useState, useEffect } from "react";
+import TodosViewForm from "./features/TodosViewForm";
+
+
+const token = `Bearer ${import.meta.env.VITE_PAT}`;
+
+
+const url = `https://api.airtable.com/v0/${import.meta.env.VITE_BASE_ID}/${
+  import.meta.env.VITE_TABLE_NAME
+}`;
+
+
+//URL encoder
+const encodeUrl = ({ sortField, sortDirection, queryString }) => {
+  let searchQuery = "";
+  let sortQuery = `sort[0][field]=${sortField}&sort[0][direction]=${sortDirection}`;
+  if(queryString){
+    searchQuery = `&filterByFormula=SEARCH("${queryString}",+title)`;
+  }
+  return encodeURI(`${url}?${sortQuery}${searchQuery}`);
+};
 
 // Dummy light components for this to work
 const GreenLight = () => (
@@ -18,13 +38,11 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [sortField, setSortField] = useState("createdTime");
+  const [sortDirection, setSortDirection] = useState("desc");
+  const [queryString, setQueryString] = useState("")
 
-  const url = `https://api.airtable.com/v0/${import.meta.env.VITE_BASE_ID}/${
-    import.meta.env.VITE_TABLE_NAME
-  }`;
-
-  const token = `Bearer ${import.meta.env.VITE_PAT}`;
-
+  console.log(setSortDirection, setSortField);
   useEffect(() => {
     const fetchTodos = async () => {
       setIsLoading(true);
@@ -33,7 +51,10 @@ function App() {
         headers: { Authorization: token },
       };
       try {
-        const resp = await fetch(url, options);
+        const resp = await fetch(
+          encodeUrl({ sortField, sortDirection, queryString }),
+          options
+        );
 
         if (!resp.ok) {
           throw new Error(resp.status);
@@ -61,7 +82,7 @@ function App() {
       }
     };
     fetchTodos();
-  }, []);
+  }, [sortDirection, sortField, queryString]);
 
   //updateTodoHandler
   const updateTodoHandler = async (editedTodo) => {
@@ -84,36 +105,39 @@ function App() {
     );
     setTodoList(updatedTodos);
     const options = {
-      method:"PATCH",
+      method: "PATCH",
       headers: {
-        "Authorization":token,
-        "Content-Type":"application/json",
+        Authorization: token,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-    }
+    };
 
-      try {
-        const resp = await fetch(url, options);
+    try {
+      const resp = await fetch(
+        encodeUrl({ sortField, sortDirection, queryString }),
+        options
+      );
 
-        if (!resp.ok) {
-          throw new Error(`Fetch failed with status: ${resp.status} ${resp.statusText}`);
-        }
-  
-      } catch (error) {
-        console.log(error.message)
-        setErrorMessage(`${error.message}. Reverting todo...`)
-        const revertedTodo = todoList.map((todo) => 
-        todo.id === originalTodo.id ? {...originalTodo} : todo
-        )
-        setTodoList([...revertedTodo]);
-      } finally {
-isSaving(false)
+      if (!resp.ok) {
+        throw new Error(
+          `Fetch failed with status: ${resp.status} ${resp.statusText}`
+        );
       }
+    } catch (error) {
+      console.log(error.message);
+      setErrorMessage(`${error.message}. Reverting todo...`);
+      const revertedTodo = todoList.map((todo) =>
+        todo.id === originalTodo.id ? { ...originalTodo } : todo
+      );
+      setTodoList([...revertedTodo]);
+    } finally {
+      isSaving(false);
+    }
   };
 
-  //complete todo helper                                         
+  //complete todo helper
   const completeTodo = async (id) => {
-
     const originalTodo = todoList.find((todo) => todo.id === id);
 
     const payload = {
@@ -129,31 +153,35 @@ isSaving(false)
     };
 
     const options = {
-      method:"PATCH",
+      method: "PATCH",
       headers: {
-        "Authorization":token,
-        "Content-Type":"application/json",
+        Authorization: token,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-    }
+    };
 
-      try {
-        const resp = await fetch(url, options);
+    try {
+      const resp = await fetch(
+        encodeUrl({ sortField, sortDirection, queryString }),
+        options
+      );
 
-        if (!resp.ok) {
-          throw new Error(`Fetch failed with status: ${resp.status} ${resp.statusText}`);
-        }
-      } catch (error) {
-        console.log(error.message)
-        setErrorMessage(`${error.message}. Reverting todo... back to original`);
-        const revertedTodo = todoList.map((todo) =>
-          todo.id === originalTodo.id ? { ...originalTodo } : todo
+      if (!resp.ok) {
+        throw new Error(
+          `Fetch failed with status: ${resp.status} ${resp.statusText}`
         );
-        setTodoList([...revertedTodo]);
-      } finally {
-        isSaving(false);
       }
-
+    } catch (error) {
+      console.log(error.message);
+      setErrorMessage(`${error.message}. Reverting todo... back to original`);
+      const revertedTodo = todoList.map((todo) =>
+        todo.id === originalTodo.id ? { ...originalTodo } : todo
+      );
+      setTodoList([...revertedTodo]);
+    } finally {
+      isSaving(false);
+    }
 
     const updatedTodos = todoList.map((todo) =>
       todo.id === id ? { ...todo, isCompleted: true } : todo
@@ -186,7 +214,10 @@ isSaving(false)
     try {
       setIsSaving(true);
 
-      const resp = await fetch(url, options);
+      const resp = await fetch(
+        encodeUrl({ sortField, sortDirection, queryString }),
+        options
+      );
 
       if (!resp.ok) {
         throw new Error(resp.status);
@@ -247,6 +278,17 @@ isSaving(false)
         onUpdateTodo={updateTodoHandler}
         isLoading={isLoading}
       />
+      <hr />
+      <TodosViewForm
+      queryString={queryString}
+      setQueryString={setQueryString}
+      sortField={sortField}
+      setSortField={setSortField}
+      sortDirection={sortDirection}
+      setSortDirection={setSortDirection}
+      />
+      <hr />
+
       {errorMessage && (
         <div>
           <hr />
